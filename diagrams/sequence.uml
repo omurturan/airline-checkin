@@ -1,0 +1,124 @@
+@startuml
+title Check-in Sequence
+actor Client
+
+
+Client -> API : listAvailableSeats(flightId)
+activate API
+API -> CheckInService : listAvailableSeats(flightId)
+activate CheckInService
+CheckInService -> FlightModel : query
+activate FlightModel
+FlightModel --> CheckInService : result
+deactivate FlightModel
+CheckInService --> API : result
+deactivate CheckInService
+API --> Client : availableSeats
+deactivate API
+
+Client -> API : reserveSeat(flightId, passengerId, seatId)
+activate API
+API -> AllocationService : reserveSeat(flightId, passengerId, seatId)
+activate AllocationService
+AllocationService -> ReservationModel : create a reservation
+activate ReservationModel
+alt success
+  ReservationModel --> AllocationService : <<Reservation Record>>
+else error
+  ReservationModel --> AllocationService : error
+  deactivate ReservationModel
+  note over AllocationService: Break on error.\nThe seat is not available.
+end
+AllocationService --> API : <<Reservation Record>>
+deactivate AllocationService
+API --> Client : <<Reservation Record>>
+deactivate API
+
+
+Client -> API : makeCheckIn
+activate API
+API -> CheckInService : makeCheckIn
+activate CheckInService
+CheckInService -> PassengerService : getPassenger
+activate PassengerService
+PassengerService -> PassengerModel : query
+activate PassengerModel
+PassengerModel --> PassengerService : <<Passenger>>
+deactivate PassengerModel
+PassengerService --> CheckInService : <<Passenger>>
+deactivate PassengerService
+alt seat choosen
+  CheckInService -> AllocationService : reserveSeat
+  activate AllocationService
+  AllocationService -> ReservationModel : create a reservation or find user's reservation
+  activate ReservationModel
+  alt reservation successful
+    ReservationModel --> AllocationService : <<Reservation Record>>
+    AllocationService --> CheckInService : <<Reservation Record>>
+  else error
+    ReservationModel --> AllocationService : error
+    AllocationService --> CheckInService : error
+    deactivate ReservationModel
+    deactivate AllocationService
+    note over CheckInService: Break on reservation error.\nThe seat is not available.
+  end
+  CheckInService -> CheckInService : getSeatPrice
+  activate CheckInService
+  CheckInService -> CheckInService : checkFunds
+  deactivate CheckInService
+  note over CheckInService: Break if not enough funds
+else no seat chosen
+  CheckInService -> AllocationService : allocatePassenger
+  activate AllocationService
+  AllocationService --> CheckInService : <<Reservation Record>>
+  deactivate AllocationService
+end
+
+CheckInService -> CheckInModel : insert check-in with STARTED state
+activate CheckInModel
+alt success
+  CheckInModel --> CheckInService : result
+else error
+  CheckInModel --> CheckInService : error
+  deactivate CheckInModel
+  note over CheckInService: Break on error.\nThe seat is not available any more or\nthere is another check-in process for the same user.
+end
+
+CheckInService -> PassengerService : processCheckIn
+activate PassengerService
+note over PassengerService: Subtract the price from user's balance
+PassengerService -> PassengerModel : update
+activate PassengerModel
+alt success
+  PassengerModel --> PassengerService : result
+  PassengerService --> CheckInService : result
+else error
+  PassengerModel --> PassengerService : error
+  PassengerService --> CheckInService : error
+  deactivate PassengerModel
+  note over CheckInService : Break on error.\nThe user does not have enough funds any more.
+end
+deactivate PassengerService
+
+
+CheckInService -> CheckInModel : modify the check-in state to COMPLETED
+activate CheckInModel
+CheckInModel --> CheckInService : result
+deactivate CheckInModel
+
+CheckInService -> AllocationService : clearReservation
+activate AllocationService
+AllocationService -> ReservationModel : delete
+activate ReservationModel
+ReservationModel --> AllocationService : result
+deactivate ReservationModel
+AllocationService --> CheckInService : result
+deactivate AllocationService
+
+CheckInService --> API : <<CheckIn Record>>
+deactivate CheckInService
+API --> Client : <<CheckIn Record>>
+deactivate API
+
+
+@enduml
