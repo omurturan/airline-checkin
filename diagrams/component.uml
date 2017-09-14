@@ -1,0 +1,25 @@
+@startuml
+
+() "TCP Socket" as Socket
+
+[API] -- Socket : uses
+Socket -- [Allocation Service]
+Socket -- [CheckIn Service]
+Socket -- [Passenger Service]
+[CheckIn Service] --> FlightCol
+[CheckIn Service] --> CheckinCol
+[Passenger Service] --> PassengerCol
+[Allocation Service] --> ReservationCol
+
+node "MongoDB" {
+  database "Flights Collection" as FlightCol {
+  }
+  database "CheckIns Collection" as CheckinCol {
+  }
+  database "Passengers Collection" as PassengerCol {
+  }
+  database "Reservations Collection" as ReservationCol {
+  }
+}
+
+@enduml
