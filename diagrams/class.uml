@@ -1,0 +1,89 @@
+@startuml
+
+class Passenger {
+    +id
+    +name
+    +balance
+}
+
+class Flight {
+    +id
+    +planeModel
+}
+
+class Seat {
+    +id
+    +location
+    +type
+    +flightId
+}
+
+enum SeatTypes {
+    REGULAR
+    WINDOW
+    AISLE
+    FIRE_EXIT
+    BUSINESS
+    EXTRA_ROOM
+}
+
+class CheckInService {
+    +listAvailableSeats(flightId)
+    +makeCheckIn(flightId, passengerId)
+    +cancelCheckIn(flightId, passengerId)
+}
+
+class CheckIn {
+    +id
+    +flightId
+    +passengerId
+    +seatId
+    +state
+    +cost
+    +createdAt
+}
+
+class AllocationService {
+    +reserveSeat(flightId, passengerId, seatId)
+    -allocatePassenger(flightId, passengerId)
+    -clearReservation(id)
+}
+
+enum CheckInStates {
+    STARTED
+    CANCELLED
+    COMPLETED
+    TIMEDOUT
+}
+
+class Reservation {
+    +id
+    +flightId
+    +seatId
+    +userId
+    +createdAt
+}
+
+class PassengerService {
+    +list()
+    +get(passengerId)
+    -processCheckIn(checkInId, passengerId)
+}
+
+
+CheckInService ..> PassengerService : uses
+CheckInService ..> AllocationService : uses
+
+CheckIn--CheckInStates
+Seat--SeatTypes
+
+
+PassengerService o--> Passenger : manages
+CheckInService o--> CheckIn : manages
+AllocationService o--> Reservation : manages
+Passenger -* CheckIn
+Flight -* CheckIn
+Flight "1" -- "1..N" Seat
+CheckIn "1" -> "0..1" Seat
+
+@enduml
