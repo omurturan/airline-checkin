@@ -30,18 +30,27 @@ OR
 
 ## How to test check-in process manually
 - run `node seed/populateDb.js` to have a fresh database.
-You can use any tool that can make HTTP requests. For now, I'll include a few `curl` requests for a sample check-in process
-- `curl 'http://localhost:8080/flights'`
+
+Any tool that can make HTTP requests can be used. For now, I'll include a few `curl` requests for a sample check-in process.
+- `GET /flights`
+```
+curl 'http://localhost:8080/flights'
+```
 This will list all the flights. This application is quite dummy at the moment but ideally, you should be able to filter destination, date etc and choose the desired flight. Get a flight ID from the result set, which we will use in the next examples. Example: `59bb97672ca3df9b0e0d2af4`
-- `curl 'http://localhost:8080/flights/59bb97672ca3df9b0e0d2af4/list-available-seats'`
+- `GET /flights/:flightId/list-available-seats`
+```
+curl 'http://localhost:8080/flights/59bb97672ca3df9b0e0d2af4/list-available-seats'
+```
 This fetches all the available seats for this specific flight. You can either choose a seat to reserve it for now or you can do the check-in without doing so. Pick a seat id.
-- ```
+- `POST /reserve-seat`
+```
 curl 'http://localhost:8080/reserve-seat' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary '{"passengerId":"59bb97652ca3df9b0e0d2af1", "flightId":"59bb97672ca3df9b0e0d2af4", "seatId": "59bc52e611f14759fa23438b" }'
  ```
- This query creates a reservation for this flight with the prefered seat. Note `passengerId` and `flightId` is okay if you've used seed data but still you should update the `seatId` part accordingly. On success, it will return a `Reservation` record which will also include the total cost of that seat. The cost is not deducted from the user's balance yet.
- - ```
+This query creates a reservation for this flight with the prefered seat. Note `passengerId` and `flightId` is okay if you've used seed data but still you should update the `seatId` part accordingly. On success, it will return a `Reservation` record which will also include the total cost of that seat. The cost is not deducted from the user's balance yet.
+ - `POST /check-in`
+ ```
 curl 'http://localhost:8080/check-in' \
      -H 'Content-Type: application/json;charset=UTF-8' \
      --data-binary '{"passengerId":"59bb97652ca3df9b0e0d2af1", "flightId":"59bb97672ca3df9b0e0d2af4", "seatId": "59bc52e611f14759fa23438b" }'
