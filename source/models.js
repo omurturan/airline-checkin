@@ -142,6 +142,15 @@ reservationSchema.index({ passengerId: 1 });
 reservationSchema.index({ seatId: 1 });
 let Reservation = mongoose.model('Reservation', reservationSchema);
 
+/*
+* Some validations should also be on database itself
+*/
+setTimeout(() => {
+    Passenger.db.db.command({ collMod: "passengers",
+                              validator: { balance: { $gte: 0 } },
+                              validationLevel: "strict" });
+}, 1000);
+
 module.exports = {
     Passenger: Passenger,
     Flight: Flight,

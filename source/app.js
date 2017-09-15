@@ -88,16 +88,6 @@ const flightRequester = new cote.Requester({
       namespace: 'flight'
 });
 
-const passengerRequester = new cote.Requester({
-      name: 'passenger requester',
-      namespace: 'passenger'
-});
-
-const seatRequester = new cote.Requester({
-      name: 'seat requester',
-      namespace: 'seat'
-});
-
 const checkInRequester = new cote.Requester({
       name: 'checkin requester',
       namespace: 'checkin'
