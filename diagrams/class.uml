@@ -14,6 +14,8 @@ class Flight {
 class Seat {
     +id
     +location
+    +available
+    +cost
     +type
     +flightId
 }
@@ -26,12 +28,7 @@ enum SeatTypes {
     BUSINESS
     EXTRA_ROOM
 }
-
-class CheckInService {
-    +listAvailableSeats(flightId)
-    +makeCheckIn(flightId, passengerId)
-    +cancelCheckIn(flightId, passengerId)
-}
+Seat--SeatTypes
 
 class CheckIn {
     +id
@@ -41,12 +38,7 @@ class CheckIn {
     +state
     +cost
     +createdAt
-}
-
-class AllocationService {
-    +reserveSeat(flightId, passengerId, seatId)
-    -allocatePassenger(flightId, passengerId)
-    -clearReservation(id)
+    +lastModifiedAt
 }
 
 enum CheckInStates {
@@ -55,33 +47,52 @@ enum CheckInStates {
     COMPLETED
     TIMEDOUT
 }
+CheckIn--CheckInStates
 
 class Reservation {
     +id
     +flightId
     +seatId
-    +userId
+    +passengerId
+    +cost
     +createdAt
 }
 
-class PassengerService {
-    +list()
-    +get(passengerId)
-    -processCheckIn(checkInId, passengerId)
+class CheckInService {
+    +checkin(flightId, passengerId, seatId)
 }
-
-
 CheckInService ..> PassengerService : uses
 CheckInService ..> AllocationService : uses
 
-CheckIn--CheckInStates
-Seat--SeatTypes
-
-
-PassengerService o--> Passenger : manages
+CheckInService o--> Passenger : manages
 CheckInService o--> CheckIn : manages
+CheckInService o--> Reservation : manages
+
+
+
+class AllocationService {
+    +reserve(flightId, passengerId, seatId)
+    -reserveRandom(flightId, passengerId)
+}
+AllocationService ..> FlightService : uses
+
+AllocationService o--> Seat : manages
 AllocationService o--> Reservation : manages
+
+
+class PassengerService {
+    -processCheckIn(<<checkInRecord>>)
+}
+PassengerService o--> Passenger : manages
+
+
+class FlightService {
+    +list()
+    +listAvailableSeats(flightId)
+}
+
 Passenger -* CheckIn
+Passenger -* Reservation
 Flight -* CheckIn
 Flight "1" -- "1..N" Seat
 CheckIn "1" -> "0..1" Seat

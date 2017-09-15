@@ -3,23 +3,27 @@ title Check-in Sequence
 actor Client
 
 
-Client -> API : listAvailableSeats(flightId)
+Client -> API : list-available-seats
 activate API
-API -> CheckInService : listAvailableSeats(flightId)
-activate CheckInService
-CheckInService -> FlightModel : query
-activate FlightModel
-FlightModel --> CheckInService : result
-deactivate FlightModel
-CheckInService --> API : result
-deactivate CheckInService
+API -> FlightService : listAvailableSeats
+activate FlightService
+FlightService -> SeatModel : query
+activate SeatModel
+SeatModel --> FlightService : result
+deactivate SeatModel
+FlightService --> API : result
+deactivate FlightService
 API --> Client : availableSeats
 deactivate API
 
-Client -> API : reserveSeat(flightId, passengerId, seatId)
+Client -> API : reserve-seat
 activate API
-API -> AllocationService : reserveSeat(flightId, passengerId, seatId)
+API -> AllocationService : reserve(flightId, passengerId, seatId)
 activate AllocationService
+AllocationService -> SeatModel : fetch the seat
+activate SeatModel
+SeatModel --> AllocationService : <<Seat Record>>
+deactivate SeatModel
 AllocationService -> ReservationModel : create a reservation
 activate ReservationModel
 alt success
@@ -27,93 +31,80 @@ alt success
 else error
   ReservationModel --> AllocationService : error
   deactivate ReservationModel
-  note over AllocationService: Break on error.\nThe seat is not available.
+  note over AllocationService: Break on error.\nThe seat is not available or\nuser has other reservations.
 end
+AllocationService -> SeatModel : update as unavailable
+activate SeatModel
+SeatModel --> AllocationService : result
+deactivate SeatModel
 AllocationService --> API : <<Reservation Record>>
 deactivate AllocationService
 API --> Client : <<Reservation Record>>
 deactivate API
 
 
-Client -> API : makeCheckIn
+Client -> API : check-in
 activate API
-API -> CheckInService : makeCheckIn
+API -> CheckInService : checkIn
 activate CheckInService
-CheckInService -> PassengerService : getPassenger
-activate PassengerService
-PassengerService -> PassengerModel : query
+CheckInService -> PassengerModel : query
 activate PassengerModel
-PassengerModel --> PassengerService : <<Passenger>>
+PassengerModel --> CheckInService : <<Passenger>>
 deactivate PassengerModel
-PassengerService --> CheckInService : <<Passenger>>
-deactivate PassengerService
 alt seat choosen
-  CheckInService -> AllocationService : reserveSeat
+  CheckInService -> AllocationService : reserve
   activate AllocationService
-  AllocationService -> ReservationModel : create a reservation or find user's reservation
-  activate ReservationModel
-  alt reservation successful
-    ReservationModel --> AllocationService : <<Reservation Record>>
-    AllocationService --> CheckInService : <<Reservation Record>>
-  else error
-    ReservationModel --> AllocationService : error
-    AllocationService --> CheckInService : error
-    deactivate ReservationModel
-    deactivate AllocationService
-    note over CheckInService: Break on reservation error.\nThe seat is not available.
-  end
-  CheckInService -> CheckInService : getSeatPrice
-  activate CheckInService
-  CheckInService -> CheckInService : checkFunds
-  deactivate CheckInService
-  note over CheckInService: Break if not enough funds
+  AllocationService -> SeatModel : fetch seat
+  activate SeatModel
+  SeatModel --> AllocationService : <<Seat Record>>
+  deactivate SeatModel
 else no seat chosen
-  CheckInService -> AllocationService : allocatePassenger
-  activate AllocationService
-  AllocationService --> CheckInService : <<Reservation Record>>
-  deactivate AllocationService
+  CheckInService -> AllocationService : reserveRandom
+  AllocationService -> FlightService : listAvailableSeats
+  activate FlightService
+  FlightService --> AllocationService : availableSeats
+  deactivate FlightService
+  note over AllocationService: Choose a seat from the available ones
 end
+AllocationService -> ReservationModel: create
+activate ReservationModel
+ReservationModel --> AllocationService : <<Reservation Record>>
+deactivate ReservationModel
+AllocationService --> CheckInService : <<Reservation Record>>
+deactivate AllocationService
+note over CheckInService: Break on reservation error.\nThe seat is not available.
+CheckInService -> CheckInService : checkEnoughFunda
+activate CheckInService
+note over CheckInService: Break if not enough funds
+deactivate CheckInService
 
-CheckInService -> CheckInModel : insert check-in with STARTED state
+
+CheckInService -> CheckInModel : <<checkIn>> state: STARTED
 activate CheckInModel
-alt success
-  CheckInModel --> CheckInService : result
-else error
-  CheckInModel --> CheckInService : error
-  deactivate CheckInModel
-  note over CheckInService: Break on error.\nThe seat is not available any more or\nthere is another check-in process for the same user.
-end
+CheckInModel --> CheckInService : result
+deactivate CheckInModel
+note over CheckInService: Break on error.\nThe seat is not available any more or\nthere is another check-in process for the same user.
 
 CheckInService -> PassengerService : processCheckIn
 activate PassengerService
 note over PassengerService: Subtract the price from user's balance
 PassengerService -> PassengerModel : update
 activate PassengerModel
-alt success
-  PassengerModel --> PassengerService : result
-  PassengerService --> CheckInService : result
-else error
-  PassengerModel --> PassengerService : error
-  PassengerService --> CheckInService : error
-  deactivate PassengerModel
-  note over CheckInService : Break on error.\nThe user does not have enough funds any more.
-end
+PassengerModel --> PassengerService : result
+deactivate PassengerModel
+PassengerService --> CheckInService : result
 deactivate PassengerService
+note over CheckInService : Break on error.\nThe user does not have enough funds any more.
 
-
-CheckInService -> CheckInModel : modify the check-in state to COMPLETED
+CheckInService -> CheckInModel : update <<checkIn>> state: COMPLETED
 activate CheckInModel
-CheckInModel --> CheckInService : result
+CheckInModel --> CheckInService : <<CheckIn Record>>
 deactivate CheckInModel
 
-CheckInService -> AllocationService : clearReservation
-activate AllocationService
-AllocationService -> ReservationModel : delete
+CheckInService -> ReservationModel : delete
 activate ReservationModel
-ReservationModel --> AllocationService : result
+ReservationModel --> CheckInService : result
 deactivate ReservationModel
-AllocationService --> CheckInService : result
-deactivate AllocationService
 
 CheckInService --> API : <<CheckIn Record>>
 deactivate CheckInService

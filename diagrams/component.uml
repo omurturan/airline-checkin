@@ -6,10 +6,13 @@
 Socket -- [Allocation Service]
 Socket -- [CheckIn Service]
 Socket -- [Passenger Service]
-[CheckIn Service] --> FlightCol
+Socket -- [Flight Service]
+[CheckIn Service] --> PassengerCol
 [CheckIn Service] --> CheckinCol
 [Passenger Service] --> PassengerCol
 [Allocation Service] --> ReservationCol
+[Flight Service] --> SeatCol
+[Flight Service] --> FlightCol
 
 node "MongoDB" {
   database "Flights Collection" as FlightCol {
@@ -19,6 +22,8 @@ node "MongoDB" {
   database "Passengers Collection" as PassengerCol {
   }
   database "Reservations Collection" as ReservationCol {
+  }
+  database "Seats Collection" as SeatCol {
   }
 }
 
