@@ -1,0 +1,7 @@
+{
+  "mongodb": {
+    "host": "localhost",
+    "database": "airline-checkin"
+  },
+  "port": "8080"
+}
