@@ -4,7 +4,7 @@
   "description": "Airline Check-in App",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
+    "start": "node app.js & node services/allocation-service.js & node services/flight-service.js & node services/passenger-service.js & node services/check-in-service.js",
     "test": "mocha -R spec"
   },
   "author": "Ömür Turan <omur.turann@gmail.com>",

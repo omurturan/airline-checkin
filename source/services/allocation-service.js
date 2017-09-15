@@ -37,7 +37,23 @@ allocationResponder.on('reserve', (req, callback) => {
         }
 
         if (!seat.available) {
-            return callback('The seat is not available');
+            let threeMinAgo = new Date();
+            threeMinAgo.setMinutes(threeMinAgo.getMinutes() - 3);
+            models.Reservation.findOne({
+                passengerId: models.types.ObjectId(req.passengerId),
+                seatId: seat._id,
+                createdAt: { $gte: threeMinAgo }
+            }, (err, reservation) => {
+                if (err) {
+                    return callback(err);
+                }
+                if (reservation) {
+                    return callback(null, reservation);
+                } else {
+                    return callback('The seat is not available');
+                }
+
+            });
         }
 
         models.Reservation.create({

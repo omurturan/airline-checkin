@@ -60,6 +60,8 @@ flights.forEach(function(flight) {
     });
 });
 
+models.CheckIn.find({}).remove().exec();
+models.Reservation.find({}).remove().exec();
 
 models.Passenger.find({}).remove(() => {
     models.Passenger.create(passengers, () => {
