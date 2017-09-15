@@ -55,7 +55,20 @@ checkInResponder.on('checkIn', (req, callback) => {
             }
             // reservation cost will be zero if no seat chosen
             if (reservation.cost > passenger.balance) {
-                return callback('Not enough money');
+                models.Seat.update({
+                    _id: reservation.seatId
+                }, {
+                    available: true
+                }, (err, data) => {
+                    models.Reservation.remove({
+                        _id: reservation._id
+                    }, (err) => {
+                        if (err) {
+                            return callback(err);
+                        }
+                        return callback('Not enough money');
+                    });
+                });
             }
 
             models.CheckIn.create({

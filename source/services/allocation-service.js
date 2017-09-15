@@ -36,6 +36,10 @@ allocationResponder.on('reserve', (req, callback) => {
             return callback('No seat is found');
         }
 
+        if (!seat.available) {
+            return callback('The seat is not available');
+        }
+
         models.Reservation.create({
             flightId: models.types.ObjectId(req.flightId),
             passengerId: models.types.ObjectId(req.passengerId),

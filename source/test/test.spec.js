@@ -14,6 +14,10 @@ const seatId = models.types.ObjectId(seatIdString);
 const seatIdString2 = '59bc3a99bf656646df050b1d';
 const seatId2 = models.types.ObjectId(seatIdString2);
 
+const checkInRequester = new cote.Requester({
+      name: 'checkin requester',
+      namespace: 'checkin'
+});
 
 describe("CheckIn Service", function() {
     before(function(done) {
@@ -54,10 +58,6 @@ describe("CheckIn Service", function() {
     });
 
     it('Should successfully check in if user has enough funds', function(done) {
-        const checkInRequester = new cote.Requester({
-              name: 'checkin requester',
-              namespace: 'checkin'
-        });
         let data = {
             type: 'checkIn',
             passengerId: passengerId,
@@ -70,6 +70,33 @@ describe("CheckIn Service", function() {
             checkIn.flightId.should.equal(flightIdString);
             checkIn.seatId.should.equal(seatIdString2);
             checkIn.cost.should.equal(300);
+            done();
+        });
+    });
+
+    it('Should fail if double checkin on the same flight', function(done) {
+        let data = {
+            type: 'checkIn',
+            passengerId: passengerId,
+            flightId: flightId,
+            seatId: seatId
+        };
+        checkInRequester.send(data, (err, checkIn) => {
+            // E11000 duplicate key error collection: ...
+            should.equal(err.code, 11000);
+            done();
+        });
+    });
+
+    it('Should fail if the seat is already taken', function(done) {
+        let data = {
+            type: 'checkIn',
+            passengerId: passengerId,
+            flightId: flightId,
+            seatId: seatId2 // we reserved this in the above test
+        };
+        checkInRequester.send(data, (err, checkIn) => {
+            should.equal(err, 'The seat is not available');
             done();
         });
     });

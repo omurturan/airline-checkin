@@ -140,6 +140,7 @@ let reservationSchema = new mongoose.Schema({
 reservationSchema.index({ flightId: 1 });
 reservationSchema.index({ passengerId: 1 });
 reservationSchema.index({ seatId: 1 });
+reservationSchema.index({ flightId: 1, passengerId: 1 }, { unique: true });
 let Reservation = mongoose.model('Reservation', reservationSchema);
 
 /*
