@@ -19,6 +19,13 @@ const passengerRequester = new cote.Requester({
       namespace: 'passenger'
 });
 
+const reservationPublisher = new cote.Publisher({
+    name: 'reservation publisher',
+    // namespace: 'rnd',
+    // key: 'a certain key',
+    broadcasts: ['expired']
+});
+
 
 checkInResponder.on('*', console.log);
 
@@ -55,20 +62,11 @@ checkInResponder.on('checkIn', (req, callback) => {
             }
             // reservation cost will be zero if no seat chosen
             if (reservation.cost > passenger.balance) {
-                models.Seat.update({
-                    _id: reservation.seatId
-                }, {
-                    available: true
-                }, (err, data) => {
-                    models.Reservation.remove({
-                        _id: reservation._id
-                    }, (err) => {
-                        if (err) {
-                            return callback(err);
-                        }
-                        return callback('Not enough money');
-                    });
+                reservationPublisher.publish('expired', {
+                    reservatiodId: reservation._id,
+                    seatId: reservation.seatId
                 });
+                return callback('Not enough money');
             }
 
             models.CheckIn.create({

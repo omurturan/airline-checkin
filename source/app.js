@@ -62,7 +62,16 @@ app.post('/reserve-seat', (req, res) => {
         if (err) {
             console.log('error ', err);
             res.status(400).end('error ', err);
+            return;
         }
+        // expire the reservation after 3 minutes
+        let data = {
+            reservationId: reservation._id,
+            seatId: reservation.seatId
+        }
+        setTimeout(() => {
+            reservationPublisher.publish('expired', data);
+        }, 3 * 60 * 1000);
         res.send(reservation);
     });
 });
@@ -96,6 +105,13 @@ const checkInRequester = new cote.Requester({
 const allocationRequester = new cote.Requester({
       name: 'allocation requester',
       namespace: 'allocation'
+});
+
+const reservationPublisher = new cote.Publisher({
+    name: 'reservation publisher',
+    // namespace: 'rnd',
+    // key: 'a certain key',
+    broadcasts: ['expired']
 });
 
 server.listen(config.port || 8080);
