@@ -59,9 +59,18 @@ This query makes the real check-in process. There are some cases that it might r
   - The seat might not be available any more.
   - The passenger might not have enough funds.
   - The passenger might already have another check-in for this flight.
+
 On success, it will return the `CheckIn` object. 
 
+## Online Demo
+This app is also deployed on Heroku: https://morning-fjord-35518.herokuapp.com/
+You can replace all localhost stuff with this and test it online. Example: 
+``` 
+curl 'https://morning-fjord-35518.herokuapp.com/flights'
+```
+
 ## Further Improvements
+- Deploy and scale it with Docker or Kubernet.
 - I did not know about [async](https://github.com/caolan/async) when I started implementing. It should definitely be included in this project. The part that it is most needed is `CheckInService`. It has a flow which consists of many steps, chained one after another.
 - A reservation should be valid only for 3 minutes. For now, this is only ensured by checking the creation dates of reservations. It might be a good idea to have a background job to expire the reservations after 3 minutes.
 - Almost no rollback mechanism is implemented.
